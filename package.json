@@ -1,0 +1,47 @@
+{
+    "name": "back-api",
+    "version": "1.0.0",
+    "description": "",
+    "main": "src/app.ts",
+    "dependencies": {
+        "@types/cors": "^2.8.6",
+        "@types/express-fileupload": "^1.1.0",
+        "@types/express-session": "^1.15.16",
+        "@types/minio": "^7.0.5",
+        "@types/pg": "^7.14.1",
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "express-fileupload": "^1.1.6",
+        "express-session": "^1.17.0",
+        "minio": "^7.0.13",
+        "pg": "^7.18.1"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.1",
+        "@types/node": "^12.7.8",
+        "eslint": "^6.4.0",
+        "eslint-plugin-import": "^2.18.2",
+        "nodemon": "^1.19.2",
+        "ts-node": "^8.4.1",
+        "tslint": "^5.20.0",
+        "tslint-config-prettier": "^1.18.0",
+        "tslint-config-standard": "^8.0.1",
+        "typescript": "^3.6.3"
+    },
+    "scripts": {
+        "start": "node -r ts-node/register ./src/app.ts",
+        "watch": "nodemon",
+        "build": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/the-netflix-s-disruptors/back-api"
+    },
+    "author": "crestey",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/the-netflix-s-disruptors/back-api/issues"
+    },
+    "homepage": "https://github.com/the-netflix-s-disruptors/back-api#readme"
+}
