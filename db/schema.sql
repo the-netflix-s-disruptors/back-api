@@ -3,9 +3,22 @@ CREATE TYPE "prefered_lg" AS ENUM (
     'EN'
 );
 
+CREATE TYPE "provider" AS ENUM (
+    'LOCAL',
+    'GOOGLE',
+    '42'
+);
+
+CREATE TYPE "image_kind" AS ENUM (
+    'LOCAL',
+    'EXTERN'
+);
+
 CREATE TABLE "users" (
     "id" SERIAL PRIMARY KEY,
-    "uuid" uuid NOT NULL, 
+    "uuid" uuid NOT NULL,
+    "provider_id" numeric NOT NULL DEFAULT 0,
+    "provider" provider NOT NULL,
     "username" text NOT NULL,
     "email" text NOT NULL,
     "given_name" text NOT NULL,
@@ -17,6 +30,7 @@ CREATE TABLE "users" (
 CREATE TABLE "images" (
     "id" SERIAL PRIMARY KEY,
     "uuid" uuid NOT NULL,
+    "kind" image_kind DEFAULT 'LOCAL',
     "src" text NOT NULL
 );
 
@@ -27,5 +41,6 @@ ADD
 CREATE UNIQUE INDEX ON "users" ("uuid");
 CREATE UNIQUE INDEX ON "users" ("username");
 CREATE UNIQUE INDEX ON "users" ("email");
+CREATE UNIQUE INDEX ON "users" ("provider_id");
 
 CREATE UNIQUE INDEX ON "images" ("uuid");

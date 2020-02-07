@@ -9,6 +9,7 @@ import Routes from './routes';
 import { FRONT_ENDPOINT } from './constants';
 import { Database } from './database';
 import { Cloud } from './cloud';
+export * from './routes/authPassport';
 
 export interface Context {
     db: Database;
