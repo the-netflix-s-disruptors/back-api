@@ -1,8 +1,21 @@
 import { Router } from 'express';
 import passport from 'passport';
 
+export const authCheck = (req: any, res: any, next: any) => {
+    if (req.user === undefined) {
+        res.sendStatus(403);
+    } else {
+        next();
+    }
+};
+
 export default function AuthRoutes(): Router {
     const router = Router();
+
+    // LOCAL STRAT
+    router.post('/login', passport.authenticate('local'), (req, res) => {
+        res.send(req.user);
+    });
 
     // GOOGLE STRAT
     router.get(
@@ -11,14 +24,20 @@ export default function AuthRoutes(): Router {
     );
 
     router.get('/google/cb', passport.authenticate('google'), (req, res) => {
-        console.log('all right');
+        res.send(req.user);
     });
 
     // 42 STRAT
     router.get('/42', passport.authenticate('42'));
 
     router.get('/42/cb', passport.authenticate('42'), (req, res) => {
-        console.log('all right');
+        res.send(req.user);
+    });
+
+    // LOGOUT
+    router.get('/logout', (req, res) => {
+        req.logout();
+        res.sendStatus(403);
     });
     return router;
 }

@@ -1,18 +1,52 @@
- -- login or sign in user Oauth provider
-
- CREATE OR REPLACE FUNCTION oauth_register(uuid1 uuid, id numeric,  provider1 provider, username1 text, email1 text, given_name1 text, family_name1 text, photo1 text) 
-        RETURNS TABLE (
+-- USER GET
+ CREATE OR REPLACE FUNCTION get_user_by_uuid(uuid1 uuid) 
+    RETURNS TABLE (
             "uuid" uuid, 
-            "provider_id" numeric, 
+            "providerId" numeric, 
             "provider" provider, 
             "username" text, 
             "email" text,
-            "given_name" text, 
-            "family_name" text,
+            "givenName" text, 
+            "familyName" text,
+            "photo" text,
+            "photoKind" image_kind,
+            "preferedLg" text
+            ) 
+    AS $$
+        BEGIN
+             RETURN QUERY
+        SELECT
+            users.uuid,
+            users.provider_id as "providerId",
+            users.provider,
+            users.username,
+            users.email,
+            users.given_name as "givenName",
+            users.family_name as "familyName",
+            ( SELECT src FROM images WHERE images.id = users.photo_id) as "photo",
+            ( SELECT kind FROM images WHERE images.id = users.photo_id) as "photoKind",
+            users.prefered_lg::text as "preferedLg"
+        FROM
+            users
+        WHERE
+            users.uuid = $1;
+        END;
+ $$ LANGUAGE plpgsql;
+
+ -- USER OAUTH
+ CREATE OR REPLACE FUNCTION oauth_register(uuid1 uuid, id numeric,  provider1 provider, username1 text, email1 text, given_name1 text, family_name1 text, photo1 text) 
+        RETURNS TABLE (
+            "uuid" uuid, 
+            "providerId" numeric, 
+            "provider" provider, 
+            "username" text, 
+            "email" text,
+            "givenName" text, 
+            "familyName" text,
             "photo" text,  
-            "prefered_lg" text
+            "preferedLg" text
         ) 
-AS $$
+    AS $$
     DECLARE 
         id_photo integer;
         is_exist record;
@@ -32,7 +66,8 @@ AS $$
                     given_name,
                     family_name,
                     photo_id,
-                    prefered_lg
+                    prefered_lg,
+                    state
                 )
             VALUES (
                 $1,
@@ -43,7 +78,8 @@ AS $$
                 $6,
                 $7,
                 id_photo,
-                'EN'::prefered_lg
+                'EN'::prefered_lg,
+                'ON'::state
             ) 
             ON CONFLICT DO NOTHING;
         END IF;
@@ -51,17 +87,171 @@ AS $$
         RETURN QUERY
         SELECT
             users.uuid,
-            users.provider_id,
+            users.provider_id as "providerId",
             users.provider,
             users.username,
             users.email,
-            users.given_name,
-            users.family_name,
+            users.given_name as "givenName",
+            users.family_name as "familyName",
             ( SELECT src FROM images WHERE images.id = users.photo_id) as "photo",
-            users.prefered_lg::text
+            users.prefered_lg::text as "preferedLg"
         FROM
             users
         WHERE
             users.provider_id = $2;
     END;
+ $$ LANGUAGE plpgsql;
+
+ -- USER SIGN UP
+ CREATE OR REPLACE FUNCTION insert_user(uuid1 uuid, provider1 provider, username1 text, email1 text, given_name1 text, family_name1 text, password text, photo text, token uuid)
+  RETURNS integer AS $$
+    DECLARE
+        id_photo integer;
+        id_user integer;
+    BEGIN
+        INSERT INTO images (uuid, kind, src) VALUES ($1, 'LOCAL', $8) RETURNING images.id INTO id_photo;
+        INSERT INTO
+            users (
+                uuid,
+                provider,
+                username,
+                email,
+                given_name,
+                family_name,
+                password,
+                photo_id,
+                prefered_lg
+            )
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7,
+                id_photo,
+                'EN'::prefered_lg
+            )
+            RETURNING 
+                users.id
+            INTO
+                id_user;
+
+        INSERT INTO 
+            tokens (
+                user_id,
+                token
+            )
+            VALUES (
+                id_user,
+                $9
+            );
+        RETURN 1;
+    END;
+ $$ LANGUAGE plpgsql;
+
+ CREATE OR REPLACE FUNCTION activate_user(uuid1 uuid, token uuid) RETURNS integer AS $$
+    DECLARE
+        token1 uuid;
+    BEGIN
+        SELECT
+            tokens.token
+        INTO
+            token1
+        FROM
+            tokens
+        WHERE
+            user_id = (SELECT id FROM users WHERE uuid = $1)
+        AND
+            tokens.state = 'ON'
+        AND
+            created_at > now() - interval '1 hours';
+        
+        IF token1 = $2 THEN
+            UPDATE
+                users
+            SET
+                users.state = 'ON'
+            WHERE
+                users.uuid = $1;
+            
+            UPDATE
+                tokens
+            SET
+                tokens.state = 'OFF'
+            WHERE
+                tokens.token = $2;
+            RETURN 1;
+        END IF;
+        RETURN 0;
+    END;
+ $$ LANGUAGE plpgsql;
+
+-- USER RESET PASSWORD
+ CREATE OR REPLACE FUNCTION reset_user(token uuid, email text) RETURNS text AS $$
+    DECLARE
+        id_user integer;
+    BEGIN
+        SELECT
+            id
+        INTO
+            id_user
+        FROM
+            users
+        WHERE
+            users.email = $2;
+
+        IF id_user IS NULL THEN
+            RETURN 'NULL';
+        END IF;
+
+        INSERT INTO
+            tokens (
+                user_id,
+                token
+            )
+            VALUES (
+                id_user,
+                $1
+            );
+        RETURN (SELECT uuid FROM users WHERE users.email = $2);
+    END;
+ $$ LANGUAGE plpgsql;
+
+ CREATE OR REPLACE FUNCTION activate_password(uuid1 uuid, token uuid, password text) RETURNS integer AS $$
+    DECLARE
+            token1 uuid;
+        BEGIN
+            SELECT
+                tokens.token
+            INTO
+                token1
+            FROM
+                tokens
+            WHERE
+                user_id = (SELECT id FROM users WHERE uuid = $1)
+            AND
+                tokens.state = 'ON'
+            AND
+                created_at > now() - interval '1 hours';
+            
+            IF token1 = $2 THEN
+                UPDATE
+                    users
+                SET
+                    users.password = $3
+                WHERE
+                    users.uuid = $1;
+                
+                UPDATE
+                    tokens
+                SET
+                    tokens.state = 'OFF'
+                WHERE
+                    tokens.token = $2;
+                RETURN 1;
+            END IF;
+            RETURN 0;
+        END; 
  $$ LANGUAGE plpgsql;

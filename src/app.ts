@@ -9,6 +9,7 @@ import Routes from './routes';
 import { FRONT_ENDPOINT } from './constants';
 import { Database } from './database';
 import { Cloud } from './cloud';
+import passport from 'passport';
 export * from './routes/authPassport';
 
 export interface Context {
@@ -46,9 +47,10 @@ async function app() {
                 saveUninitialized: true,
             })
         )
+        .use(passport.initialize())
+        .use(passport.session())
         .use(fileUpload())
         .use(async (req, res, next) => {
-            // get all user data
             // const user = await getUserByUuid({ db, uuid: req.session!.user });
 
             const context: Context = {

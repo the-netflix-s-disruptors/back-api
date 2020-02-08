@@ -1,12 +1,56 @@
 import passport from 'passport';
 import { OAuth2Strategy as google } from 'passport-google-oauth';
 import { Strategy as fortyTow } from 'passport-42';
+import { Strategy as local } from 'passport-local';
 import { uuid } from 'uuidv4';
+import { verify } from 'argon2';
 
 import { GOOGLE_CB, FORTYTOW_CB } from '../constants';
+import { getUser } from './utils';
 import { Database } from '../database';
+
+export interface User {
+    uuid: string;
+    providerId: number;
+    provider: string;
+    username: string;
+    email: string;
+    givenName: string;
+    familyName: string;
+    photo: string;
+    preferedLg: string;
+}
+
 const db = new Database();
 
+passport.serializeUser((user: User, done) => {
+    done(null, user.uuid);
+});
+
+passport.deserializeUser(async (uuid: string, done) => {
+    done(null, await getUser(uuid));
+});
+
+// LOCAL
+passport.use(
+    new local(async (username, password, done) => {
+        try {
+            const {
+                rows: [user],
+            } = await db.query(
+                `SELECT uuid, password FROM users WHERE username = $1`,
+                [username]
+            );
+            if (user !== undefined && (await verify(user.password, password))) {
+                done(null, await getUser(user.uuid));
+            } else return done(null, false);
+        } catch (e) {
+            return done({ type: 'Auth', details: 'Failed', e });
+        }
+    })
+);
+
+// GOOGLE
 passport.use(
     new google(
         {
@@ -41,14 +85,15 @@ passport.use(
                         photo,
                     ]
                 );
-                console.log(user);
-            } catch (err) {
-                return done({ type: 'Auth', details: 'Failed', err });
+                done(null, await getUser(user.uuid));
+            } catch (e) {
+                return done({ type: 'Auth', details: 'Failed', e });
             }
         }
     )
 );
 
+// 42
 passport.use(
     new fortyTow(
         {
@@ -88,9 +133,9 @@ passport.use(
                         photo,
                     ]
                 );
-                console.log(user);
-            } catch (err) {
-                return done({ type: 'Auth', details: 'Failed', err });
+                done(null, await getUser(user.uuid));
+            } catch (e) {
+                return done({ type: 'Auth', details: 'Failed', e });
             }
         }
     )
