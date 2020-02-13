@@ -1,3 +1,16 @@
+-- USER MOVIE
+CREATE OR REPLACE FUNCTION get_film_of_user(id int) RETURNS TABLE ("film_list" int) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT 
+            film_history.film_id 
+        FROM 
+            film_history 
+        WHERE 
+            film_history.user_id = $1;
+    END;
+$$ LANGUAGE plpgsql;
+
 -- USER GET
  CREATE OR REPLACE FUNCTION get_user_by_uuid(uuid1 uuid) 
     RETURNS TABLE (
@@ -10,6 +23,7 @@
             "familyName" text,
             "photo" text,
             "photoKind" image_kind,
+            "seenMovies" int[],
             "preferedLg" text
             ) 
     AS $$
@@ -25,6 +39,7 @@
             users.family_name as "familyName",
             ( SELECT src FROM images WHERE images.id = users.photo_id) as "photo",
             ( SELECT kind FROM images WHERE images.id = users.photo_id) as "photoKind",
+            ( SELECT array_agg("film_list") FROM get_film_of_user(users.id)) as "seenMovies" ,
             users.prefered_lg::text as "preferedLg"
         FROM
             users

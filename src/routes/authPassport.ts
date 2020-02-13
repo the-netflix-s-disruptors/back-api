@@ -19,6 +19,7 @@ export interface User {
     familyName: string;
     photo: string;
     preferedLg: string;
+    seenMovies: number[];
 }
 
 const db = new Database();

@@ -35,6 +35,12 @@ CREATE TABLE "users" (
     "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
+CREATE TABLE "film_history" (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" int NOT NULL,
+    "film_id" int NOT NULL
+);
+
 CREATE TABLE "tokens" (
     "id" SERIAL PRIMARY KEY,
     "user_id" int NOT NULL,
@@ -56,6 +62,10 @@ ADD
     FOREIGN KEY ("photo_id") REFERENCES "images" ("id");
 
 ALTER TABLE "tokens"
+ADD
+    FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+
+ALTER TABLE "film_history"
 ADD
     FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 

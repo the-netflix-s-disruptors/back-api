@@ -30,11 +30,13 @@ export async function getExternalUser(uuid: string) {
         const {
             rows: [result],
         } = await db.query(`SELECT * FROM get_user_by_uuid($1)`, [uuid]);
+        console.log(result);
         const user = {
             username: result.username,
             givenName: result.givenName,
             familyname: result.familyName,
             photo: publicSrc(result.photo, result.photoKind),
+            seenMovies: result.seenMovies,
         };
         return user;
     } catch (e) {
