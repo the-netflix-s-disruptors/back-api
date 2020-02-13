@@ -420,7 +420,14 @@ export default function UserRoutes(): Router {
                 if (!errors.isEmpty()) {
                     return res.status(422).json({ errors: errors.array() });
                 }
-
+                if (
+                    req.body.preferedLg !== 'EN' &&
+                    req.body.preferedLg !== 'FR'
+                ) {
+                    return res
+                        .status(422)
+                        .json({ errors: 'Bad inputs: EN or FR' });
+                }
                 const result = await db.query(
                     `UPDATE users SET users.prefered_lg = $2 WHERE users.uuid = $1`,
                     [req.user.uuid, req.body.preferedLg]

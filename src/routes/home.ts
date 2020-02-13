@@ -6,13 +6,6 @@ export default function HomeRoutes(): Router {
     const router = Router();
 
     router.post('/:page/:limit', authCheck, async (req: any, res: any) => {
-        // search
-        // sortedBy: 'title', 'rating', 'years', gender
-        // filterGender: 'comedy', 'sci-fi', 'horror', 'romance', 'action', 'thriller', 'drama', 'mystery', 'crime', 'animation', 'adventure', 'fantasy'
-        // ratingMin,
-        // ratingMax,
-        // yearMin
-        // yearMax
         try {
             const genderList = [
                 'comedy',

@@ -270,3 +270,19 @@ $$ LANGUAGE plpgsql;
             RETURN 0;
         END; 
  $$ LANGUAGE plpgsql;
+
+ -- COMMENTS MOVIE
+
+CREATE OR REPLACE FUNCTION get_movie_comments(id int) RETURNS TABLE ("username" text, "payload" text, "createdAt" timestamptz) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            (SELECT users.username FROM users WHERE users.id = comments.user_id) as "username",
+            comments.payload,
+            comments.created_at
+        FROM
+            comments
+        WHERE
+            comments.film_id = $1;
+    END;
+$$ LANGUAGE plpgsql;
