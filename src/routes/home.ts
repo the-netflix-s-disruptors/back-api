@@ -108,6 +108,7 @@ export default function HomeRoutes(): Router {
                 isSeen: req.user.seenMovies.find((e: any) => e === movie.id)
                     ? true
                     : false,
+                imbId: movie.imdb_code,
             }));
 
             res.json(final);
