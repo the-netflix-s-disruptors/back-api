@@ -1,6 +1,7 @@
 CREATE TYPE "prefered_lg" AS ENUM (
     'FR',
-    'EN'
+    'EN',
+    'ES'
 );
 
 CREATE TYPE "provider" AS ENUM (

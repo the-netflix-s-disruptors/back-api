@@ -41,7 +41,6 @@ export async function getExternalUser(uuid: string) {
         const {
             rows: [result],
         } = await db.query(`SELECT * FROM get_user_by_uuid($1)`, [uuid]);
-        console.log(result);
         const user = {
             username: result.username,
             givenName: result.givenName,
@@ -219,6 +218,7 @@ export const getSubtitles = (
     language: string,
     singleSub: boolean
 ) => {
+    console.log(language);
     return new Promise(async (resolve, reject) => {
         const response: any = {
             en: '',
@@ -245,9 +245,15 @@ export const getSubtitles = (
                                     (err, data) => {
                                         if (err) return reject(err);
                                         const base64data = Buffer.from(data);
-                                        response[
-                                            language
-                                        ] = base64data.toString('base64');
+                                        if (language === 'FR') {
+                                            response[
+                                                'fr'
+                                            ] = base64data.toString('base64');
+                                        } else if (language === 'ES') {
+                                            response[
+                                                'es'
+                                            ] = base64data.toString('base64');
+                                        }
                                         resolve(response);
                                     }
                                 );

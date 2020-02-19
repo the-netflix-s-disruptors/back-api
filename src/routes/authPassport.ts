@@ -39,7 +39,7 @@ passport.use(
             const {
                 rows: [user],
             } = await db.query(
-                `SELECT uuid, password FROM users WHERE username = $1`,
+                `SELECT uuid, password FROM users WHERE username = $1 AND users.state = 'ON'`,
                 [username]
             );
             if (user !== undefined && (await verify(user.password, password))) {

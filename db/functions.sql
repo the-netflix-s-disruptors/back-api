@@ -180,21 +180,22 @@ $$ LANGUAGE plpgsql;
             user_id = (SELECT id FROM users WHERE uuid = $1)
         AND
             tokens.state = 'ON'
-        AND
-            created_at > now() - interval '1 hours';
+        ORDER BY
+            created_at
+        DESC;
         
         IF token1 = $2 THEN
             UPDATE
                 users
             SET
-                users.state = 'ON'
+                state = 'ON'
             WHERE
                 users.uuid = $1;
             
             UPDATE
                 tokens
             SET
-                tokens.state = 'OFF'
+                state = 'OFF'
             WHERE
                 tokens.token = $2;
             RETURN 1;
@@ -249,20 +250,22 @@ $$ LANGUAGE plpgsql;
             AND
                 tokens.state = 'ON'
             AND
-                created_at > now() - interval '1 hours';
-            
+                created_at > now() - interval '1 hours'
+            ORDER BY
+                created_at
+            DESC;
             IF token1 = $2 THEN
                 UPDATE
                     users
                 SET
-                    users.password = $3
+                    password = $3
                 WHERE
                     users.uuid = $1;
                 
                 UPDATE
                     tokens
                 SET
-                    tokens.state = 'OFF'
+                    state = 'OFF'
                 WHERE
                     tokens.token = $2;
                 RETURN 1;
@@ -273,16 +276,22 @@ $$ LANGUAGE plpgsql;
 
  -- COMMENTS MOVIE
 
-CREATE OR REPLACE FUNCTION get_movie_comments(id int) RETURNS TABLE ("username" text, "payload" text, "createdAt" timestamptz) AS $$
+CREATE OR REPLACE FUNCTION get_movie_comments(id int) RETURNS TABLE ("uuid" uuid, "src" text, "kind" image_kind, "username" text, "payload" text, "createdAt" timestamptz) AS $$
     BEGIN
         RETURN QUERY
         SELECT
+            (SELECT users.uuid FROM users WHERE users.id = comments.user_id),
+            (SELECT images.src FROM images INNER JOIN users ON users.photo_id = images.id WHERE users.id = comments.user_id) as "src",
+            (SELECT images.kind FROM images INNER JOIN users ON users.photo_id = images.id WHERE users.id = comments.user_id) as "kind",
             (SELECT users.username FROM users WHERE users.id = comments.user_id) as "username",
             comments.payload,
             comments.created_at
         FROM
             comments
         WHERE
-            comments.film_id = $1;
+            comments.film_id = $1
+        ORDER BY
+            comments.created_at
+        DESC;
     END;
 $$ LANGUAGE plpgsql;

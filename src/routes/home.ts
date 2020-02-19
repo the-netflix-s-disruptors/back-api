@@ -105,16 +105,21 @@ export default function HomeRoutes(): Router {
                 year: movie.year,
                 rating: movie.rating,
                 image: movie.medium_cover_image,
-                isSeen: req.user.seenMovies.find((e: any) => e === movie.id)
-                    ? true
-                    : false,
+                isSeen:
+                    req.user.seenMovies === undefined ||
+                    req.user.seenMovies === null
+                        ? false
+                        : req.user.seenMovies.find((e: any) => e === movie.id)
+                        ? true
+                        : false,
                 imbId: movie.imdb_code,
             }));
 
             res.json(final);
         } catch (e) {
             console.error(e);
-            res.sendStatus(400);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
     });
     return router;

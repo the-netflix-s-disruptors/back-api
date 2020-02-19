@@ -94,15 +94,20 @@ export default function UserRoutes(): Router {
                         token,
                     ]
                 );
-                if (result.insert_user !== 1) res.sendStatus(400);
+                if (result.insert_user !== 1) {
+                    res.json({ status: 'ERROR' });
+                    res.status(400);
+                }
 
                 // SEND EMAIL
                 const url = `${uuid1}/${token}`;
+                console.log(url);
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -119,13 +124,15 @@ export default function UserRoutes(): Router {
             ]);
 
             if (result.activate_user !== 1) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
                 return;
             }
             res.status(200);
             res.json({ status: 'SUCCESS' });
         } catch (e) {
-            res.sendStatus(400);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
     });
 
@@ -135,7 +142,6 @@ export default function UserRoutes(): Router {
         [check('email').isEmail()],
         async (req: any, res: any) => {
             const db = res.locals.db;
-
             try {
                 const errors = validationResult(req);
                 if (!errors.isEmpty()) {
@@ -149,17 +155,20 @@ export default function UserRoutes(): Router {
                     req.body.email,
                 ]);
                 if (result.reset_user === 'NULL') {
-                    res.sendStatus(400);
+                    res.json({ status: 'ERROR' });
+                    res.status(400);
                     return;
                 }
 
                 // SEND EMAIL
                 const url = `${result.reset_user}/${token}`;
+                console.log(url);
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -179,21 +188,30 @@ export default function UserRoutes(): Router {
             const db = res.locals.db;
 
             try {
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                    return res.status(422).json({ errors: errors.array() });
+                }
+
                 const {
                     rows: [result],
                 } = await db.query(
                     `SELECT * FROM activate_password($1, $2, $3)`,
-                    [req.params.uuid, req.params.token, hash(req.body.password)]
+                    [
+                        req.params.uuid,
+                        req.params.token,
+                        await hash(req.body.password),
+                    ]
                 );
 
                 if (result.activate_password !== 1) {
-                    res.sendStatus(400);
+                    res.json({ status: 'ERROR' });
                     return;
                 }
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
             }
         }
     );
@@ -236,8 +254,12 @@ export default function UserRoutes(): Router {
                 `UPDATE images SET src = $2, kind = 'LOCAL' WHERE images.id = (SELECT photo_id FROM users WHERE uuid = $1)`,
                 [req.user.uuid, newPics]
             );
+            res.status(200);
+            res.json({ status: 'SUCCESS' });
         } catch (e) {
-            res.sendStatus(400);
+            console.error(e);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
     });
 
@@ -262,14 +284,15 @@ export default function UserRoutes(): Router {
                 }
 
                 const result = await db.query(
-                    `UPDATE users SET users.username = $2 WHERE users.uuid = $1`,
+                    `UPDATE users SET username = $2 WHERE users.uuid = $1`,
                     [req.user.uuid, req.body.username]
                 );
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -289,14 +312,15 @@ export default function UserRoutes(): Router {
                 }
 
                 const result = await db.query(
-                    `UPDATE users SET users.email = $2 WHERE users.uuid = $1`,
+                    `UPDATE users SET email = $2 WHERE users.uuid = $1`,
                     [req.user.uuid, req.body.email]
                 );
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -322,14 +346,14 @@ export default function UserRoutes(): Router {
                 }
 
                 const result = await db.query(
-                    `UPDATE users SET users.given_name = $2 WHERE users.uuid = $1`,
+                    `UPDATE users SET given_name = $2 WHERE users.uuid = $1`,
                     [req.user.uuid, req.body.givenName]
                 );
-
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -354,14 +378,15 @@ export default function UserRoutes(): Router {
                 }
 
                 const result = await db.query(
-                    `UPDATE users SET users.family_name = $2 WHERE users.uuid = $1`,
+                    `UPDATE users SET family_name = $2 WHERE users.uuid = $1`,
                     [req.user.uuid, req.body.familyName]
                 );
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -389,14 +414,15 @@ export default function UserRoutes(): Router {
                 }
 
                 const result = await db.query(
-                    `UPDATE users SET users.password = $2 WHERE users.uuid = $1`,
-                    [req.user.uuid, req.body.password]
+                    `UPDATE users SET password = $2 WHERE users.uuid = $1`,
+                    [req.user.uuid, await hash(req.body.password)]
                 );
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -422,21 +448,23 @@ export default function UserRoutes(): Router {
                 }
                 if (
                     req.body.preferedLg !== 'EN' &&
-                    req.body.preferedLg !== 'FR'
+                    req.body.preferedLg !== 'FR' &&
+                    req.body.preferedLg !== 'ES'
                 ) {
                     return res
                         .status(422)
                         .json({ errors: 'Bad inputs: EN or FR' });
                 }
                 const result = await db.query(
-                    `UPDATE users SET users.prefered_lg = $2 WHERE users.uuid = $1`,
+                    `UPDATE users SET prefered_lg = $2 WHERE users.uuid = $1`,
                     [req.user.uuid, req.body.preferedLg]
                 );
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         }
     );
@@ -448,8 +476,14 @@ export default function UserRoutes(): Router {
             res.status(200);
             res.json({ user });
         } catch (e) {
-            res.sendStatus(400);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
+    });
+
+    // RETURNING CONNECTED USER
+    router.get('/me', authCheck, async (req, res) => {
+        res.json(req.user);
     });
     return router;
 }

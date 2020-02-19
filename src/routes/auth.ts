@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import passport from 'passport';
+import { FRONT_ENDPOINT } from '../constants';
 
 export const authCheck = (req: any, res: any, next: any) => {
     if (req.user === undefined) {
@@ -24,14 +25,14 @@ export default function AuthRoutes(): Router {
     );
 
     router.get('/google/cb', passport.authenticate('google'), (req, res) => {
-        res.send(req.user);
+        res.redirect(FRONT_ENDPOINT);
     });
 
     // 42 STRAT
     router.get('/42', passport.authenticate('42'));
 
     router.get('/42/cb', passport.authenticate('42'), (req, res) => {
-        res.send(req.user);
+        res.redirect(FRONT_ENDPOINT);
     });
 
     // LOGOUT

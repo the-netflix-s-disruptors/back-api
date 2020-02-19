@@ -35,6 +35,7 @@ async function app() {
         )
         .use(bodyParser.urlencoded({ extended: false }))
         .use(bodyParser.json())
+        .use(fileUpload())
         .use(
             session({
                 secret: 'test',
@@ -49,7 +50,6 @@ async function app() {
         )
         .use(passport.initialize())
         .use(passport.session())
-        .use(fileUpload())
         .use(async (req, res, next) => {
             // const user = await getUserByUuid({ db, uuid: req.session!.user });
 

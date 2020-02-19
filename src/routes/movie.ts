@@ -14,6 +14,7 @@ import {
     extSub,
     convSub,
     getSubtitles,
+    publicSrc,
 } from './utils';
 import { userInfo } from 'os';
 import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
@@ -24,6 +25,7 @@ export default function MovieRoutes(): Router {
     router.get('/information/:id', authCheck, async (req, res) => {
         try {
             const url = `https://yts.mx/api/v2/movie_details.json?movie_id=${req.params.id}&with_cast=true`;
+
             const result = await fetch(url)
                 .then(res => res.json())
                 .then(res => res);
@@ -33,8 +35,14 @@ export default function MovieRoutes(): Router {
                 return;
             }
 
+            const url2 = `http://www.omdbapi.com/?i=${result.data.movie.imdb_code}&apikey=8b838085`;
+
+            const second = await fetch(url2)
+                .then(res => res.json())
+                .then(res => res);
             const final = {
                 id: result.data.movie.id,
+                imdbId: result.data.movie.imdb_code,
                 title: result.data.movie.title,
                 year: result.data.movie.year,
                 rating: result.data.movie.rating,
@@ -42,13 +50,16 @@ export default function MovieRoutes(): Router {
                 resume: result.data.movie.description_full,
                 backgroundImage: result.data.movie.background_images,
                 cover: result.data.movie.large_cover_image,
+                director: second.Director,
+                producer: second.Writer,
                 casting: result.data.movie.cast,
                 runtime: result.data.movie.runtime,
-                trailer: `https://www.youtube.com/watch?v=${result.data.movie.yt_trailer_code}`,
+                trailer: result.data.movie.yt_trailer_code,
             };
             res.json(final);
         } catch (e) {
-            res.sendStatus(400);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
     });
 
@@ -61,10 +72,15 @@ export default function MovieRoutes(): Router {
                 } = await db.query(`SELECT * FROM get_movie_comments($1)`, [
                     req.params.id,
                 ]);
-                res.json(rows);
+                const result = rows.map((user: any) => ({
+                    ...user,
+                    path: publicSrc(user.src, user.kind),
+                }));
+                res.json(result);
             } catch (e) {
                 console.error(e);
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
             }
         })
         .post(
@@ -93,19 +109,20 @@ export default function MovieRoutes(): Router {
                         [req.user.uuid, req.params.id, req.body.payload]
                     );
                     if (rowsCount === 0) {
-                        res.sendStatus(400);
+                        res.json({ status: 'ERROR' });
+                        res.status(400);
                     }
                     res.status(200);
                     res.json({ status: 'SUCCESS' });
                 } catch (e) {
                     console.error(e);
-                    res.sendStatus(400);
+                    res.json({ status: 'ERROR' });
+                    res.status(400);
                 }
             }
         );
 
-    //auth check
-    router.get('/:id', async (req, res) => {
+    router.get('/:id', authCheck, async (req, res) => {
         try {
             // GET HASH OF THE MOVIE
             const info = await getHash(req.params.id);
@@ -153,12 +170,14 @@ export default function MovieRoutes(): Router {
                 convertStream(file, res);
                 console.log('mkv');
             } else {
-                res.sendStatus(400);
+                res.json({ status: 'ERROR' });
+                res.status(400);
                 return;
             }
         } catch (e) {
             console.error(e);
-            res.sendStatus(400);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
     });
 
@@ -181,8 +200,8 @@ export default function MovieRoutes(): Router {
                         sub['en'][0].url === null ||
                         sub['en'][0].url === undefined
                     ) {
-                        res.json({ status: 'NO SUBS AVALIABLE' });
-                        res.sendStatus(400);
+                        res.json({ status: 'ERROR' });
+                        res.status(400);
                         return;
                     }
 
@@ -195,18 +214,22 @@ export default function MovieRoutes(): Router {
                         await setSub('fr');
                         subCount++;
                     }
-
+                    if (req.user.preferedLg === 'ES' && sub['es'][0].url) {
+                        await setSub('es');
+                        subCount++;
+                    }
                     // GET SUBS
                     const result: any = await getSubtitles(
                         req.params.imdbId,
                         req.user.preferedLg,
-                        subCount !== 0 ? true : false
+                        subCount === 0 ? true : false
                     );
                     res.json(result);
                 });
         } catch (e) {
             console.error(e);
-            res.sendStatus(400);
+            res.json({ status: 'ERROR' });
+            res.status(400);
         }
     });
     return router;
