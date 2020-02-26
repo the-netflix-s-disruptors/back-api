@@ -181,7 +181,6 @@ export default function MovieRoutes(): Router {
         }
     });
 
-    // auth check
     router.get('/sub/:imdbId', authCheck, async (req: any, res) => {
         try {
             subApi
@@ -226,6 +225,22 @@ export default function MovieRoutes(): Router {
                     );
                     res.json(result);
                 });
+        } catch (e) {
+            console.error(e);
+            res.json({ status: 'ERROR' });
+            res.status(400);
+        }
+    });
+
+    router.get('/isee/:id', authCheck, async (req: any, res) => {
+        const db = res.locals.db;
+        try {
+            if (req.params.id) {
+                await db.query(
+                    `INSERT INTO film_history (user_id, film_id) VALUES ((SELECT id FROM users WHERE uuid = $1 ), $2)`,
+                    [req.user.uuid, req.params.id]
+                );
+            }
         } catch (e) {
             console.error(e);
             res.json({ status: 'ERROR' });

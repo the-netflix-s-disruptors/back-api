@@ -6,7 +6,14 @@ import fileType from 'file-type';
 
 import { authCheck } from './auth';
 import { getExternalUser } from './utils';
+import { FRONT_ENDPOINT } from '../constants';
 
+const send = require('gmail-send')({
+    user: process.env.GOOGLE_USER,
+    pass: process.env.GOOGLE_PASS,
+    from: 'contact@hypertube.fr',
+    subject: 'Activate your acount',
+});
 export default function UserRoutes(): Router {
     const router = Router();
 
@@ -79,7 +86,7 @@ export default function UserRoutes(): Router {
                 const uuid1 = uuid();
                 const token = uuid();
                 const {
-                    rows: [result],
+                    rows: [resu],
                 } = await db.query(
                     `SELECT * FROM insert_user($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                     [
@@ -94,18 +101,22 @@ export default function UserRoutes(): Router {
                         token,
                     ]
                 );
-                if (result.insert_user !== 1) {
+                if (resu.insert_user !== 1) {
                     res.json({ status: 'ERROR' });
                     res.status(400);
                 }
 
                 // SEND EMAIL
-                const url = `${uuid1}/${token}`;
-                console.log(url);
+                const url = `${FRONT_ENDPOINT}/sign-in/${uuid1}/${token}`;
+                await send({
+                    to: req.body.email,
+                    html: `Hello, please activate your acount <a href=${url}>here</a>`,
+                });
 
                 res.status(200);
                 res.json({ status: 'SUCCESS' });
             } catch (e) {
+                console.error(e);
                 res.json({ status: 'ERROR' });
                 res.status(400);
             }
@@ -161,7 +172,11 @@ export default function UserRoutes(): Router {
                 }
 
                 // SEND EMAIL
-                const url = `${result.reset_user}/${token}`;
+                const url = `${FRONT_ENDPOINT}/password-reseting/${result.reset_user}/${token}`;
+                await send({
+                    to: req.body.email,
+                    html: `Hello, reset your password here <a href=${url}>here</a>`,
+                });
                 console.log(url);
 
                 res.status(200);

@@ -39,6 +39,7 @@
         "file-type": "^14.1.1",
         "fluent-ffmpeg": "^2.1.2",
         "fs": "0.0.1-security",
+        "gmail-send": "^1.8.10",
         "minio": "^7.0.13",
         "node-fetch": "^2.6.0",
         "node-stream-zip": "^1.9.1",

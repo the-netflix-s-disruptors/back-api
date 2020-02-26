@@ -39,7 +39,8 @@ CREATE TABLE "users" (
 CREATE TABLE "film_history" (
     "id" SERIAL PRIMARY KEY,
     "user_id" int NOT NULL,
-    "film_id" int NOT NULL
+    "film_id" int NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "comments" (
