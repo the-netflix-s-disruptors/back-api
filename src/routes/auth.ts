@@ -4,7 +4,8 @@ import { FRONT_ENDPOINT } from '../constants';
 
 export const authCheck = (req: any, res: any, next: any) => {
     if (req.user === undefined) {
-        res.sendStatus(403);
+        res.status(403);
+        res.json({ status: 'FORBIDDEN' });
     } else {
         next();
     }

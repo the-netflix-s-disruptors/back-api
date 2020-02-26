@@ -49,11 +49,31 @@ export default function HomeRoutes(): Router {
             if (req.body.search !== undefined) {
                 search = `&query_term=${encodeURI(req.body.search)}`;
             }
+
+            //SOURCE 1: YTS
             const url = `https://yts.mx/api/v2/list_movies.json?sort_by=${sortBy}&page=${req.params.page}&limit=${req.params.limit}${filterGender}${search}`;
             const result = await fetch(url)
                 .then(res => res.json())
                 .then(res => res);
             if (result === null || result.data.movies === undefined) {
+                res.json({ error: 'no result' });
+                res.status(200);
+                return;
+            }
+
+            //SOURCE 2: POPCORN
+            const url2 = `https://tv-v2.api-fetch.website/movies/${req.params.page}?sort=last%20added&order=1`;
+            const result2 = await fetch(url2)
+                .then(res => res.json())
+                .then(res => res);
+
+            if (result === null || result.data.movies === undefined) {
+                res.json({ error: 'no result' });
+                res.status(200);
+                return;
+            }
+
+            if (result2 === null) {
                 res.json({ error: 'no result' });
                 res.status(200);
                 return;
