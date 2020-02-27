@@ -4,6 +4,8 @@ import cors from 'cors';
 import session from 'express-session';
 import { createServer } from 'http';
 import fileUpload from 'express-fileupload';
+import { CronJob } from 'cron';
+import findRemoveSync from 'find-remove';
 
 import Routes from './routes';
 import { FRONT_ENDPOINT } from './constants';
@@ -25,6 +27,11 @@ async function app() {
 
     const db = new Database();
     const cloud = new Cloud();
+
+    new CronJob(
+        '0 6 * * *',
+        await findRemoveSync('public/', { age: { seconds: 2629743 }, dir: '*' })
+    ).start();
 
     server
         .use(

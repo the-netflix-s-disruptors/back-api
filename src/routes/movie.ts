@@ -4,6 +4,7 @@ import { check, validationResult } from 'express-validator';
 import fetch from 'node-fetch';
 import torrentStream from 'torrent-stream';
 import subApi from 'yifysubtitles-api';
+import touch from 'touch';
 
 import {
     getHash,
@@ -78,7 +79,7 @@ export default function MovieRoutes(): Router {
                 }));
                 res.json(result);
             } catch (e) {
-                console.error(e);
+                // console.error(e);
                 res.json({ status: 'ERROR' });
                 res.status(400);
             }
@@ -115,7 +116,7 @@ export default function MovieRoutes(): Router {
                     res.status(200);
                     res.json({ status: 'SUCCESS' });
                 } catch (e) {
-                    console.error(e);
+                    // console.error(e);
                     res.json({ status: 'ERROR' });
                     res.status(400);
                 }
@@ -125,6 +126,7 @@ export default function MovieRoutes(): Router {
     router.get('/:id', authCheck, async (req, res) => {
         try {
             // GET HASH OF THE MOVIE
+            const filename = `public/${req.params.id}`;
             const info = await getHash(req.params.id);
             const magnet = `magnet:?xt=urn:btih:${info!.hash}&dn=${
                 info!.url
@@ -154,9 +156,9 @@ export default function MovieRoutes(): Router {
             });
 
             const file: any = await getTorrentStream(engine);
-
+            touch.sync(filename);
             engine.on('download', (pieceIndex: number) => {
-                console.log(`downloading ...`);
+                // console.log(`downloading ...`);
             });
             res.on('close', () => {
                 engine.remove(true, () => {
@@ -168,14 +170,14 @@ export default function MovieRoutes(): Router {
                 beginStream(file, req, res);
             } else if (file.type === 'mkv') {
                 convertStream(file, res);
-                console.log('mkv');
+                // console.log('mkv');
             } else {
                 res.json({ status: 'ERROR' });
                 res.status(400);
                 return;
             }
         } catch (e) {
-            console.error(e);
+            // console.error(e);
             res.json({ status: 'ERROR' });
             res.status(400);
         }
@@ -226,7 +228,6 @@ export default function MovieRoutes(): Router {
                     res.json(result);
                 });
         } catch (e) {
-            console.error(e);
             res.json({ status: 'ERROR' });
             res.status(400);
         }
@@ -234,6 +235,7 @@ export default function MovieRoutes(): Router {
 
     router.get('/isee/:id', authCheck, async (req: any, res) => {
         const db = res.locals.db;
+
         try {
             if (req.params.id) {
                 await db.query(
@@ -242,7 +244,7 @@ export default function MovieRoutes(): Router {
                 );
             }
         } catch (e) {
-            console.error(e);
+            // console.error(e);
             res.json({ status: 'ERROR' });
             res.status(400);
         }
